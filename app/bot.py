@@ -76,7 +76,7 @@ async def process_days(message: types.Message, state: FSMContext):
         forecasts = []
 
         for place in location_keys:
-            weather_data = get_forecast(place, days)  # Получаем прогноз на 5 дней, затем обрезаем
+            weather_data = get_forecast(place)  # Получаем прогноз на 5 дней, затем обрезаем
             print(weather_data[0])
             forecasts.append(parse_weather_forecast(weather_data, days))
 
