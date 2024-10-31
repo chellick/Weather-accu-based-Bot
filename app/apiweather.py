@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 import requests
-import requests
 import pandas as pd
 
 
@@ -120,7 +119,10 @@ def get_forecast(location_key: str):
     else:
         print(f"Error: {response.status_code}, {response.text}")
         return None
-        
+    
+
+
+
         
 def fahrenheit_to_celsius(fahrenheit):
     return (fahrenheit - 32) * 5 / 9 if fahrenheit is not None else None
@@ -173,10 +175,161 @@ def parse_weather_forecast(weather_data, days=5):
     
         
     df = pd.DataFrame(daily_weather_summary)
-    
-    
     print(df)
     
     return df.head(days)
 
+
+
+
+#TODO: болванка
+def get_forecast_test(location_key: str):
+    """
+    Возвращает тестовые данные прогноза погоды.
+    """
+    test_data = [
+        {
+            "Date": "2024-11-01",
+            "Temperature (°C)": 12,
+            "Apparent Temperature (°C)": 10,
+            "Dew Point (°C)": 6,
+            "Wind Speed (km/h)": 15,
+            "Wind Direction": "NE",
+            "Humidity (%)": 85,
+            "Precipitation Probability (%)": 20,
+            "Cloud Cover (%)": 60,
+            "Visibility (km)": 9,
+            "Pressure (mb)": 1010,
+            "UV Index": 2,
+            "Weather Description": "Overcast"
+        },
+        {
+            "Date": "2024-11-02",
+            "Temperature (°C)": 14,
+            "Apparent Temperature (°C)": 12,
+            "Dew Point (°C)": 7,
+            "Wind Speed (km/h)": 10,
+            "Wind Direction": "NW",
+            "Humidity (%)": 80,
+            "Precipitation Probability (%)": 15,
+            "Cloud Cover (%)": 50,
+            "Visibility (km)": 10,
+            "Pressure (mb)": 1008,
+            "UV Index": 3,
+            "Weather Description": "Partly cloudy"
+        },
+        {
+            "Date": "2024-11-03",
+            "Temperature (°C)": 10,
+            "Apparent Temperature (°C)": 8,
+            "Dew Point (°C)": 5,
+            "Wind Speed (km/h)": 20,
+            "Wind Direction": "E",
+            "Humidity (%)": 78,
+            "Precipitation Probability (%)": 30,
+            "Cloud Cover (%)": 70,
+            "Visibility (km)": 8,
+            "Pressure (mb)": 1012,
+            "UV Index": 2,
+            "Weather Description": "Rainy"
+        },
+        {
+            "Date": "2024-11-04",
+            "Temperature (°C)": 9,
+            "Apparent Temperature (°C)": 7,
+            "Dew Point (°C)": 4,
+            "Wind Speed (km/h)": 18,
+            "Wind Direction": "SE",
+            "Humidity (%)": 82,
+            "Precipitation Probability (%)": 25,
+            "Cloud Cover (%)": 80,
+            "Visibility (km)": 7,
+            "Pressure (mb)": 1011,
+            "UV Index": 1,
+            "Weather Description": "Cloudy"
+        },
+        {
+            "Date": "2024-11-05",
+            "Temperature (°C)": 11,
+            "Apparent Temperature (°C)": 9,
+            "Dew Point (°C)": 6,
+            "Wind Speed (km/h)": 12,
+            "Wind Direction": "SW",
+            "Humidity (%)": 76,
+            "Precipitation Probability (%)": 10,
+            "Cloud Cover (%)": 40,
+            "Visibility (km)": 10,
+            "Pressure (mb)": 1013,
+            "UV Index": 3,
+            "Weather Description": "Clear"
+        }
+    ]
+    return test_data
+
+#TODO: болванка    
+def parse_weather_forecast_test(weather_data, days=5):
+    """
+    Обрабатывает тестовые данные погоды и возвращает словарь для анализа.
+    """
+    parsed_data = []
+    for day in weather_data[:days]:
+        parsed_day = {
+            "Date": day["Date"],
+            "Temp (°C)": day["Temperature (°C)"],
+            "Feels Like (°C)": day["Apparent Temperature (°C)"],
+            "Humidity (%)": day["Humidity (%)"],
+            "Wind Speed (km/h)": day["Wind Speed (km/h)"]
+        }
+        parsed_data.append(parsed_day)
+    return parsed_data
+
+#TODO: болванка
+def get_location_key_by_geoposition_test(latitude, longitude, api_key):
+    """
+    Возвращает тестовый location key по указанным координатам.
+    """
+    # Тестовые location keys
+    location_keys = {(55.7558, 37.6173): "12345", (59.9343, 30.3351): "67890"}
+    return location_keys.get((latitude, longitude), "00000")
+
+#TODO: болванка
+def get_location_key_by_city_test(city_name, api_key):
+    """
+    Возвращает тестовый location key для указанного города.
+    """
+    # Тестовые location keys по городам
+    location_keys = {"Moscow": "12345", "Saint Petersburg": "67890"}
+    return location_keys.get(city_name, "00000")
+
+#TODO: болванка
+def parse_weather_forecast(weather_data, days=5):
+    """
+    Обрабатывает данные о погоде и возвращает отформатированные данные для вывода прогноза.
+    
+    Параметры:
+    - weather_data: список данных о погоде за несколько дней
+    - days: количество дней, для которых нужно вернуть данные (по умолчанию 5)
+    
+    Возвращает:
+    - список словарей, содержащих ключевые параметры погоды
+    """
+    parsed_data = []
+    for day in weather_data[:days]:
+        parsed_day = {
+            "Date": day["Date"],
+            "Temperature (°C)": day["Temperature (°C)"],
+            "Apparent Temperature (°C)": day["Apparent Temperature (°C)"],
+            "Dew Point (°C)": day["Dew Point (°C)"],
+            "Wind Speed (km/h)": day["Wind Speed (km/h)"],
+            "Wind Direction": day["Wind Direction"],
+            "Humidity (%)": day["Humidity (%)"],
+            "Precipitation Probability (%)": day["Precipitation Probability (%)"],
+            "Cloud Cover (%)": day["Cloud Cover (%)"],
+            "Visibility (km)": day["Visibility (km)"],
+            "Pressure (mb)": day["Pressure (mb)"],
+            "UV Index": day["UV Index"],
+            "Weather Description": day["Weather Description"]
+        }
+        parsed_data.append(parsed_day)
+    return parsed_data
 
