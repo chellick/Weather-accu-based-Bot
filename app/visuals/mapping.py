@@ -1,24 +1,9 @@
+import os
+import time
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
-
-# Обновлённые данные для нескольких городов
-weather_data = [
-    {"City": "Moscow", "Date": "2024-11-01", "Temperature (°C)": 12, "Apparent Temperature (°C)": 10, "Humidity (%)": 85, "Wind Speed (km/h)": 15, "Weather Description": "Overcast"},
-    {"City": "Moscow", "Date": "2024-11-02", "Temperature (°C)": 14, "Apparent Temperature (°C)": 12, "Humidity (%)": 80, "Wind Speed (km/h)": 10, "Weather Description": "Partly cloudy"},
-    {"City": "Moscow", "Date": "2024-11-03", "Temperature (°C)": 10, "Apparent Temperature (°C)": 8, "Humidity (%)": 78, "Wind Speed (km/h)": 20, "Weather Description": "Rainy"},
-    {"City": "Moscow", "Date": "2024-11-04", "Temperature (°C)": 9, "Apparent Temperature (°C)": 7, "Humidity (%)": 82, "Wind Speed (km/h)": 18, "Weather Description": "Cloudy"},
-    {"City": "Moscow", "Date": "2024-11-05", "Temperature (°C)": 11, "Apparent Temperature (°C)": 9, "Humidity (%)": 76, "Wind Speed (km/h)": 12, "Weather Description": "Clear"},
-    
-    {"City": "Saint Petersburg", "Date": "2024-11-01", "Temperature (°C)": 8, "Apparent Temperature (°C)": 6, "Humidity (%)": 90, "Wind Speed (km/h)": 14, "Weather Description": "Foggy"},
-    {"City": "Saint Petersburg", "Date": "2024-11-02", "Temperature (°C)": 7, "Apparent Temperature (°C)": 5, "Humidity (%)": 85, "Wind Speed (km/h)": 12, "Weather Description": "Overcast"},
-    {"City": "Saint Petersburg", "Date": "2024-11-03", "Temperature (°C)": 6, "Apparent Temperature (°C)": 4, "Humidity (%)": 88, "Wind Speed (km/h)": 18, "Weather Description": "Rainy"},
-    {"City": "Saint Petersburg", "Date": "2024-11-04", "Temperature (°C)": 10, "Apparent Temperature (°C)": 8, "Humidity (%)": 80, "Wind Speed (km/h)": 16, "Weather Description": "Cloudy"},
-    {"City": "Saint Petersburg", "Date": "2024-11-05", "Temperature (°C)": 12, "Apparent Temperature (°C)": 10, "Humidity (%)": 75, "Wind Speed (km/h)": 10, "Weather Description": "Clear"}
-]
-
-# Преобразуем данные в DataFrame
-df = pd.DataFrame(weather_data)
+import threading
 
 def generate_temp_figure(df, city):
     city_data = df[df["City"] == city]
@@ -45,7 +30,28 @@ def generate_wind_speed_figure(df, city):
     fig.update_layout(title=f"Wind Speed Forecast for {city}", xaxis_title="Date", yaxis_title="Wind Speed (km/h)")
     return fig
 
-# Функция запуска сервера Dash на порту 8080
+df = pd.DataFrame()
+
+# Функция для мониторинга директории
+def monitor_directory(path="app/data", interval=10):
+    global df
+    while True:
+        try:
+            files = [f for f in os.listdir(path) if f.endswith('.csv')]
+            if files:
+                latest_file = max(files, key=lambda x: os.path.getctime(os.path.join(path, x)))
+                new_df = pd.read_csv(os.path.join(path, latest_file))
+                if not new_df.equals(df):  # Проверка, изменился ли датафрейм
+                    df = new_df
+                    print(f"Loaded data from {latest_file}")
+        except Exception as e:
+            print(f"Error loading data: {e}")
+        time.sleep(interval)
+
+# Запуск мониторинга директории в отдельном потоке
+monitor_thread = threading.Thread(target=monitor_directory)
+monitor_thread.daemon = True
+monitor_thread.start()
 
 app = Dash(__name__)
 
@@ -53,30 +59,44 @@ app.layout = html.Div([
     html.H1("Weather Forecast Dashboard"),
     dcc.Dropdown(
         id="city-dropdown",
-        options=[{"label": city, "value": city} for city in df["City"].unique()],
-        value="Moscow",
+        options=[{"label": city, "value": city} for city in df["City"].unique()] if not df.empty else [],
+        value="Moscow" if not df.empty else None,
         clearable=False
     ),
     dcc.Graph(id="temp-graph"),
     dcc.Graph(id="humidity-graph"),
-    dcc.Graph(id="wind-speed-graph")
+    dcc.Graph(id="wind-speed-graph"),
+    dcc.Interval(
+        id="interval-component",
+        interval=10 * 1000, 
+        n_intervals=0 
+    )
 ])
 
 @app.callback(
     [Output("temp-graph", "figure"),
-    Output("humidity-graph", "figure"),
-    Output("wind-speed-graph", "figure")],
-    Input("city-dropdown", "value")
+     Output("humidity-graph", "figure"),
+     Output("wind-speed-graph", "figure"),
+     Output("city-dropdown", "options"),
+     Output("city-dropdown", "value")],
+    [Input("city-dropdown", "value"),
+     Input("interval-component", "n_intervals")]
 )
-def update_graphs(selected_city):
+def update_graphs(selected_city, n_intervals):
+    if df.empty:
+        return {}, {}, {}, [], None
+
+    city_options = [{"label": city, "value": city} for city in df["City"].unique()]
+    if selected_city not in df["City"].unique():
+        selected_city = city_options[0]["value"]  # Выбираем первый город, если выбранный город отсутствует
+
     return (
         generate_temp_figure(df, selected_city),
         generate_humidity_figure(df, selected_city),
-        generate_wind_speed_figure(df, selected_city)
+        generate_wind_speed_figure(df, selected_city),
+        city_options,
+        selected_city
     )
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8080)
-
-
-
